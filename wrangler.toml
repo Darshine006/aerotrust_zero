@@ -1,0 +1,15 @@
+name = "aerotrust"
+main = "src/index.js"
+compatibility_date = "2026-10-08"
+
+[vars]
+APP_NAME = "AeroTrust"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aerotrust-db"
+database_id = "06b06123-1d3d-41a0-a258-e5b09fe73828"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"

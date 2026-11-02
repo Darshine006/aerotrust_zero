@@ -154,14 +154,37 @@ Secret:
 
 Use the same value stored in `GITHUB_WEBHOOK_SECRET`.
 
-Select:
+Select these webhook events:
 
-- Pull requests
+- **Pull requests** — subscribe to opened, reopened, synchronize, and ready_for_review.
+- **Pull request reviews** — subscribe to submitted.
 
-The Worker processes:
-- opened
-- reopened
-- synchronize
+The Worker verifies the HMAC signature, retrieves changed file paths, evaluates policy, writes the decision to D1, and publishes a GitHub Check named **AeroTrust Policy** on the PR head commit.
+
+### GitHub Check enforcement
+
+Create a fine-grained personal access token for the target repository with:
+- **Pull requests: Read**
+- **Checks: Read and write**
+- **Metadata: Read** (normally selected automatically)
+
+Store it as a Worker secret:
+
+```bash
+npx wrangler secret put GITHUB_TOKEN
+npx wrangler secret put GITHUB_WEBHOOK_SECRET
+```
+
+The check conclusion maps to policy:
+- **ALLOW** → success
+- **REVIEW** → action_required (merge remains blocked when this is a required check)
+- **BLOCK** → failure
+
+For actual merge protection, open the target repository's Settings → Rules → Rulesets (or Branch protection rules), target the protected branch, and require the status check **AeroTrust Policy**. Without that repository rule, a failing check is visible but GitHub may still allow merging.
+
+For a REVIEW decision, a maintainer submits an **Approve** or **Request changes** review in GitHub. The pull_request_review webhook re-evaluates the current PR; approval clears only a REVIEW finding, while BLOCK remains blocked. A new commit triggers re-evaluation.
+
+If the token is missing or GitHub rejects the Check API request, AeroTrust still records the decision in D1 and returns the Check publishing error in the webhook response; it does not claim merge enforcement succeeded.
 
 ## Important
 
